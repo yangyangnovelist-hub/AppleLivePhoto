@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  linux-selection-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install package
+        run: pip install -e .
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+
+  macos-open-source-backend-smoke:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          brew install ffmpeg exiftool
+          pip install -e . pyobjc-framework-Quartz
+      - name: Run AppleLivePhoto tests
+        run: python -m unittest discover -s tests -v
+      - name: Smoke-test MIT make-live-photo backend
+        run: |
+          git clone --depth 1 https://github.com/nicing/make-live-photo.git /tmp/make-live-photo
+          mkdir -p /tmp/applelive-e2e
+          ffmpeg -y -v error -f lavfi -i "testsrc2=size=720x1280:rate=30" -t 6 -pix_fmt yuv420p /tmp/applelive-e2e/input.mp4
+          openlive build /tmp/applelive-e2e/input.mp4 -o /tmp/applelive-e2e/dist --seconds 3 --moment-seconds 1 --aspect-ratio 3:4
+          python /tmp/make-live-photo/scripts/make_live_photo.py \
+            /tmp/applelive-e2e/dist/input_livebundle/input.mov \
+            --video-mode auto --audio mute \
+            --output-dir /tmp/applelive-e2e/final --name smoke
+          test -f /tmp/applelive-e2e/final/smoke.jpg
+          test -f /tmp/applelive-e2e/final/smoke.mov
+          test -f /tmp/applelive-e2e/final/smoke.manifest.json
