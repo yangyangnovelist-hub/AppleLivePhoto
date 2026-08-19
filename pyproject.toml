@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "applelivephoto"
+version = "0.1.2"
+description = "Open-source CLI to select and batch-build Apple Live Photo candidates from video"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "AppleLivePhoto contributors"}]
+dependencies = ["numpy", "Pillow"]
+
+[project.scripts]
+openlive = "openlivephoto.cli:main"
+
+[tool.setuptools]
+packages = ["openlivephoto"]
